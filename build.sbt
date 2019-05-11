@@ -14,11 +14,9 @@ libraryDependencies ++= {
     "com.typesafe.slick" %% "slick" % slickV,
     "com.h2database" % "h2" % h2V,
     "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
-    "org.scalatest" %% "scalatest" % scalaTestV % "test"
+    "org.scalatest" %% "scalatest" % scalaTestV % "test",
+    
+    "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.5",
+    "it.bitbl" %% "scala-faker" % "0.4",
   )
 }
-
-// https://mvnrepository.com/artifact/it.bitbl/scala-faker
-libraryDependencies += "it.bitbl" %% "scala-faker" % "0.4"
-
-libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.5"

@@ -8,6 +8,7 @@ import ru.tinkoff.db.DB
 import ru.tinkoff.model.Tables._
 import ru.tinkoff.service.Catalog._
 import slick.jdbc.H2Profile.api._
+import ru.tinkoff.service.params._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,7 +25,7 @@ object Catalog {
   case class Books(books: Vector[Book])
 
   case class GetAuthors(pageParams: PageParams)
-  case class GetBooks(pageParams: PageParams, order: Option[Order] = None)
+  case class GetBooks(pageParams: PageParams, order: Option[OrderParams] = None)
   case class GetBooksByAuthor(pageParams: PageParams, authorId: Long)
   case class GetAuthor(id: Long)
   case class GetBook(id: Long)

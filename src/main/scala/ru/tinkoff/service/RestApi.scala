@@ -6,14 +6,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.util.Timeout
 import akka.pattern.ask
-
 import scala.concurrent.{ExecutionContext, Future}
-
-case class PageParams(page: Int, pageSize: Int)
-
-case class Order(o: Option[String]) {
-  def order = o.filter(s => "asc".equals(s) || "desc".equals(s)).getOrElse("asc")
-}
+import ru.tinkoff.service.params._
 
 class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
 
@@ -26,11 +20,10 @@ class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
 
 trait RestRoutes extends CatalogApi with CatalogMarshalling {
   import StatusCodes._
+  import ru.tinkoff.service.params.withPagination
 
   def routes: Route = testRoute ~ authorsRoute ~ authorRoute ~ authorBooksRoute ~ authorsBookNumberRoute ~
     booksRoute ~ bookRoute
-
-  def withPagination = parameters('page.as[Int] ? 0, 'pageSize.as[Int] ? 10).as(PageParams)
 
   def testRoute =
     pathPrefix("test") {
@@ -109,7 +102,7 @@ trait RestRoutes extends CatalogApi with CatalogMarshalling {
         }
       } ~ path("withSortByViews") {
         withPagination { pageParams =>
-          parameter('order ? ).as(Order) { o =>
+          parameter('order ? ).as(OrderParams) { o =>
             get {
               onSuccess(getBooks(pageParams, Some(o))) { books =>
                 complete(OK, books)
@@ -146,7 +139,7 @@ trait CatalogApi {
 
   def getAuthors(pageParams: PageParams): Future[Authors] = catalog.ask(GetAuthors(pageParams)).mapTo[Authors]
 
-  def getBooks(pageParams: PageParams, order: Option[Order]): Future[Catalog.Books] =
+  def getBooks(pageParams: PageParams, order: Option[OrderParams]): Future[Catalog.Books] =
     catalog.ask(GetBooks(pageParams, order)).mapTo[Books]
 
   def getBooksByAuthor(pageParams: PageParams, authorId: Long): Future[Option[Books]] =
