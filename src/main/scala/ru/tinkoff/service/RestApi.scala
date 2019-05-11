@@ -44,24 +44,10 @@ trait RestRoutes extends CatalogApi with CatalogMarshalling {
 
   def routes: Route = handleExceptions(myExceptionHandler) {
     handleRejections(myRejectionHandler) {
-      testRoute ~ authorsRoute ~ authorRoute ~ authorBooksRoute ~ authorsBookNumberRoute ~
+      authorsRoute ~ authorRoute ~ authorBooksRoute ~ authorsBookNumberRoute ~
         booksRoute ~ bookRoute
     }
   }
-
-
-  def testRoute =
-    pathPrefix("test") {
-      pathEndOrSingleSlash {
-        // GET /test
-        get {
-          onSuccess(Future.successful("test answered")) { body =>
-            throw new Exception("BAD HAPPPEND")
-//            complete(OK, body)
-          }
-        }
-      }
-    }
 
   def authorsRoute =
     pathPrefix("authors") {
