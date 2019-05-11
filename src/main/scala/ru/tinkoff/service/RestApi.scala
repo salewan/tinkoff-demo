@@ -4,10 +4,11 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.util.Timeout
 import akka.pattern.ask
-import scala.concurrent.{ExecutionContext, Future}
+import akka.util.Timeout
 import ru.tinkoff.service.params._
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
 
@@ -20,10 +21,34 @@ class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
 
 trait RestRoutes extends CatalogApi with CatalogMarshalling {
   import StatusCodes._
+  import ru.tinkoff.service.exception._
   import ru.tinkoff.service.params.withPagination
 
-  def routes: Route = testRoute ~ authorsRoute ~ authorRoute ~ authorBooksRoute ~ authorsBookNumberRoute ~
-    booksRoute ~ bookRoute
+  val myExceptionHandler = ExceptionHandler {
+    case e: ResourceNotFound[_] =>
+      complete(BadRequest, Error(e.getMessage))
+    case e: Throwable =>
+      complete(InternalServerError, Error(e.getMessage))
+  }
+
+  val myRejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
+    .handle { case vr: ValidationRejection =>
+      complete(BadRequest, Error(vr.message))
+    }
+    .handleNotFound {
+      extractUnmatchedPath { p =>
+        complete(NotFound, Error(s"The path you requested [$p] does not exist."))
+      }
+    }
+    .result()
+
+  def routes: Route = handleExceptions(myExceptionHandler) {
+    handleRejections(myRejectionHandler) {
+      testRoute ~ authorsRoute ~ authorRoute ~ authorBooksRoute ~ authorsBookNumberRoute ~
+        booksRoute ~ bookRoute
+    }
+  }
+
 
   def testRoute =
     pathPrefix("test") {
@@ -31,7 +56,8 @@ trait RestRoutes extends CatalogApi with CatalogMarshalling {
         // GET /test
         get {
           onSuccess(Future.successful("test answered")) { body =>
-            complete(OK, body)
+            throw new Exception("BAD HAPPPEND")
+//            complete(OK, body)
           }
         }
       }
@@ -56,7 +82,7 @@ trait RestRoutes extends CatalogApi with CatalogMarshalling {
       pathEndOrSingleSlash {
         get {
           onSuccess(getAuthor(authorId)) { authorOpt =>
-            authorOpt.map(author => complete(OK, author)).getOrElse(complete(NotFound))
+            authorOpt.map(author => complete(OK, author)).getOrElse(failWith(authorNotFound(authorId)))
           }
         }
       }
@@ -68,7 +94,7 @@ trait RestRoutes extends CatalogApi with CatalogMarshalling {
         withPagination { pageParams =>
           get {
             onSuccess(getBooksByAuthor(pageParams, author)) { booksOpt =>
-              booksOpt.map(books => complete(OK, books)).getOrElse(complete(NotFound))
+              booksOpt.map(books => complete(OK, books)).getOrElse(failWith(authorNotFound(author)))
             }
           }
         }
@@ -119,7 +145,7 @@ trait RestRoutes extends CatalogApi with CatalogMarshalling {
       pathEndOrSingleSlash {
         get {
           onSuccess(getBook(bookId)) { bookOpt =>
-            bookOpt.map(book => complete(OK, book)).getOrElse(complete(NotFound))
+            bookOpt.map(book => complete(OK, book)).getOrElse(failWith(bookNotFound(bookId)))
           }
         }
       }
