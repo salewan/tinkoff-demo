@@ -4,7 +4,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.Timeout
 import org.scalatest.{Matchers, WordSpec}
 import ru.tinkoff.db.Data
-import ru.tinkoff.service.Catalog.Books
+import ru.tinkoff.service.books.BooksActor.Books
 import ru.tinkoff.service.Const._
 import ru.tinkoff.service.{CatalogMarshalling, Error, RestApi}
 
