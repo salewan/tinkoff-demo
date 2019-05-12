@@ -1,21 +1,23 @@
-import akka.actor.{ActorRef, Props}
+import akka.actor.Props
 import akka.http.scaladsl.model.{ContentTypes, StatusCodes}
+import akka.http.scaladsl.server.RouteConcatenation
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.util.Timeout
 import org.scalatest.{Matchers, WordSpec}
 import ru.tinkoff.db.Data
-import ru.tinkoff.service.books.BooksActor.Books
 import ru.tinkoff.service.Const._
-import ru.tinkoff.service.{CatalogMarshalling, Error, RestApi}
+import ru.tinkoff.service.authors.AuthorsService
+import ru.tinkoff.service.books.BooksActor.Books
+import ru.tinkoff.service.books.BooksService
+import ru.tinkoff.service.{CatalogMarshalling, Error, RestService}
 
-import scala.concurrent.duration._
 import scala.util.Random
 
-class RestServiceSpec extends WordSpec with Matchers with ScalatestRouteTest with CatalogMarshalling {
 
-  val route = new RestApi(system, Timeout(10.seconds)) {
-    override def createCatalog(): ActorRef = system.actorOf(Props[ErsatzCatalog], "ersatz-catalog")
-  }.routes
+class RestServiceSpec extends WordSpec with Matchers with ScalatestRouteTest with CatalogMarshalling with RouteConcatenation {
+
+  val booksActor = system.actorOf(Props[ErsatzBooksActor])
+  val authorsActor = system.actorOf(Props[ErsatzAuthorsActor])
+  val route = RestService.wrapRoutes(new BooksService(booksActor).route ~ new AuthorsService(authorsActor).route)(system)
 
 
   "Rest api" should {
