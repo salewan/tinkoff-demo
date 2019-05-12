@@ -6,13 +6,11 @@ import akka.http.scaladsl.server.Directives.{handleExceptions, handleRejections}
 import akka.http.scaladsl.server.{Route, RouteConcatenation}
 import akka.stream.ActorMaterializer
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
+import com.typesafe.config.ConfigFactory
 import ru.tinkoff.db.DB
 import ru.tinkoff.service.authors.{AuthorsActor, AuthorsService}
 import ru.tinkoff.service.books.{BooksActor, BooksService}
 import ru.tinkoff.swagger.SwaggerDocService
-
-import scala.io.StdIn
-import scala.util.Try
 
 object RestService extends App with RouteConcatenation {
 
@@ -22,25 +20,28 @@ object RestService extends App with RouteConcatenation {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
+  val config = ConfigFactory.load()
+  val host = config.getString("http.host")
+  val port = config.getInt("http.port")
+
   val books = system.actorOf(Props[BooksActor])
   val authors = system.actorOf(Props[AuthorsActor])
 
   val route: Route = wrapRoutes(
     new BooksService(books).route ~
       new AuthorsService(authors).route ~
-      SwaggerDocService.routes
+      new SwaggerDocService(host, port).routes
   )
 
-  val port = Try(system.settings.config.getInt("akka.http.server.port")).getOrElse(8080)
-  print(port)
-  val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
+  val bindingFuture = Http().bindAndHandle(route, host, port)
 
-  println("Application has started on port 8080")
-
-  StdIn.readLine()
-  bindingFuture
-    .flatMap(_.unbind())
-    .onComplete(_ => system.terminate())
+  bindingFuture.onComplete {
+    case scala.util.Failure(exception) =>
+      println(exception)
+      system.terminate()
+    case scala.util.Success(value) =>
+      println(s"Application has started on port $host:$port | APP_NAME ${sys.env("APP_NAME")}")
+  }
 
   def wrapRoutes(route: Route)(implicit system: ActorSystem): Route = {
     handleRejections(myRejectionHandler) {

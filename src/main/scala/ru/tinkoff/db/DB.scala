@@ -21,14 +21,14 @@ object DB {
     val setupFuture = db.run(setup)
 
     val resultFuture = setupFuture.flatMap { _ =>
-      println("Catalog:")
+      //println("Catalog:")
       val q1 = for {
         a <- authors
         b <- books if b.authorId === a.id
       } yield (a.name, b.title, b.viewsCount)
 
-      db.run(q1.result).map(_.foreach(t =>
-        println(" " + t._1 + "\t" + t._2 + "\t" + t._3)
+      db.run(q1.result).map(_.foreach(t => ()
+        //println(" " + t._1 + "\t" + t._2 + "\t" + t._3)
       ))
     }
     Await.result(resultFuture, Duration.Inf)
