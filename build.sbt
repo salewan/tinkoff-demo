@@ -1,3 +1,5 @@
+enablePlugins(JavaAppPackaging)
+
 name := "testRestApiService"
 
 version := "1.0"
@@ -30,3 +32,6 @@ libraryDependencies ++= {
     "ch.megard" %% "akka-http-cors" % "0.4.0",
   )
 }
+
+mainClass in assembly := Some("ru.tinkoff.service.RestService")
+assemblyJarName in assembly := "testRestApiService.jar"
