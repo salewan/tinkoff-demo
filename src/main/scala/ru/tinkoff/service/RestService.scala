@@ -40,7 +40,7 @@ object RestService extends App with RouteConcatenation {
       println(exception)
       system.terminate()
     case scala.util.Success(value) =>
-      println(s"Application has started on port $host:$port | APP_NAME ${sys.env("APP_NAME")}")
+      println(s"Application has started on port $host:$port")
   }
 
   def wrapRoutes(route: Route)(implicit system: ActorSystem): Route = {

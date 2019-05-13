@@ -11,8 +11,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.{Operation, Parameter}
 import javax.ws.rs.{GET, Path}
 import ru.tinkoff.service.CatalogMarshalling
-import ru.tinkoff.service.exception.{authorNotFound, bookNotFound}
+import ru.tinkoff.service.exception._
 import ru.tinkoff.service.params.{OrderParams, withPagination}
+import ru.tinkoff.service.authors.AuthorsActor.Author
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -48,7 +49,7 @@ class BooksService(books: ActorRef)(implicit executionContext: ExecutionContext)
         withPagination { pageParams =>
           get {
             onSuccess(books.ask(GetBooksByAuthor(pageParams, authorId)).mapTo[Option[Books]]) { booksOpt =>
-              booksOpt.map(books => complete(OK, books)).getOrElse(failWith(authorNotFound(authorId)))
+              booksOpt.map(books => complete(OK, books)).getOrElse(failWith(notFound[Author](authorId)))
             }
           }
         }
@@ -135,7 +136,7 @@ class BooksService(books: ActorRef)(implicit executionContext: ExecutionContext)
       pathEndOrSingleSlash {
         get {
           onSuccess(books.ask(GetBook(bookId)).mapTo[Option[Book]]) { bookOpt =>
-            bookOpt.map(book => complete(OK, book)).getOrElse(failWith(bookNotFound(bookId)))
+            bookOpt.map(book => complete(OK, book)).getOrElse(failWith(notFound[Book](bookId)))
           }
         }
       }

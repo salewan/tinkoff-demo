@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.{Operation, Parameter}
 import javax.ws.rs.{GET, Path}
 import ru.tinkoff.service.CatalogMarshalling
-import ru.tinkoff.service.exception.authorNotFound
+import ru.tinkoff.service.exception._
 import ru.tinkoff.service.params.withPagination
 
 import scala.concurrent.ExecutionContext
@@ -71,7 +71,7 @@ class AuthorsService(authors: ActorRef)(implicit executionContext: ExecutionCont
       pathEndOrSingleSlash {
         get {
           onSuccess(authors.ask(GetAuthor(authorId)).mapTo[Option[Author]]) { authorOpt =>
-            authorOpt.map(author => complete(OK, author)).getOrElse(failWith(authorNotFound(authorId)))
+            authorOpt.map(author => complete(OK, author)).getOrElse(failWith(notFound[Author](authorId)))
           }
         }
       }

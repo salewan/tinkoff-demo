@@ -1,11 +1,11 @@
 package ru.tinkoff.service
 
-import ru.tinkoff.service.authors.AuthorsActor._
-import ru.tinkoff.service.books.BooksActor._
+import scala.reflect.ClassTag
 
 package object exception {
 
-  def authorNotFound(id: Long) = new ResourceNotFound[Author](classOf[Author], id)
-
-  def bookNotFound(id: Long) = new ResourceNotFound[Book](classOf[Book], id)
+  def notFound[A : ClassTag](id: Long): NotFoundException = {
+    val ct = implicitly[ClassTag[A]]
+    new NotFoundException(ct.runtimeClass.getSimpleName, id)
+  }
 }
